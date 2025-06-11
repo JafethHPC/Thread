@@ -1,0 +1,45 @@
+:host {
+  height: 100%;
+  width: 100%;
+  display: flex;
+}
+
+.sidebar-container {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.conversations-section {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  width: 100%;
+}
+
+.profile-footer {
+  margin-top: auto;
+  flex-shrink: 0;
+  width: 100%;
+}
+
+.top-section {
+  width: 100%;
+}
+
+.header-section {
+  width: 100%;
+}
+
+.new-thread-btn {
+  width: 100%;
+}
+
+.conversation-item {
+  width: 100%;
+}
+
+.profile-content {
+  width: 100%;
+}
