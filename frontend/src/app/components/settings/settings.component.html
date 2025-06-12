@@ -170,6 +170,15 @@
                 </div>
               </form>
             </div>
+
+            <div *ngIf="activeTab === 'account'" class="mt-6">
+              <button
+                class="bg-red-500 text-white px-4 py-2 rounded"
+                (click)="deleteAllConversations()"
+              >
+                Delete All Chats
+              </button>
+            </div>
           </div>
 
           <!-- Services Tab -->

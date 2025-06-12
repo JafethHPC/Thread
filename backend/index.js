@@ -3,6 +3,7 @@ const cors = require("cors");
 const dotenv = require("dotenv");
 const db = require("./models");
 const session = require("express-session");
+const bodyParser = require("body-parser");
 const app = express();
 
 dotenv.config();
@@ -30,8 +31,8 @@ app.use(
   })
 );
 
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(bodyParser.json({ limit: "50mb" }));
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
 
 app.use((req, res, next) => {
   console.log(`--> ${req.method} ${req.path}`);
@@ -49,6 +50,8 @@ require("./routes/auth.routes")(app);
 require("./routes/conversation.routes")(app);
 require("./routes/google.routes")(app);
 require("./routes/ai.routes")(app);
+require("./routes/actionLog.routes")(app);
+require("./routes/proactiveSuggestions.routes")(app);
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
@@ -56,3 +59,7 @@ app.listen(PORT, () => {
 });
 
 db.sequelize.sync();
+
+// Start the scheduled sync service
+const { scheduledSyncService } = require("./services/scheduledSync.service");
+scheduledSyncService.start();

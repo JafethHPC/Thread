@@ -10,7 +10,27 @@ module.exports = function (app) {
     next();
   });
 
-  app.get("/api/conversations", [authJwt.verifyToken], controller.findAll);
+  app.get(
+    "/api/conversations",
+    [authJwt.verifyToken],
+    controller.getConversations
+  );
 
-  app.get("/api/conversations/:id", [authJwt.verifyToken], controller.findOne);
+  app.get(
+    "/api/conversations/:id",
+    [authJwt.verifyToken],
+    controller.getConversationById
+  );
+
+  app.delete(
+    "/api/conversations/:id",
+    [authJwt.verifyToken],
+    controller.deleteConversation
+  );
+
+  app.delete(
+    "/api/conversations",
+    [authJwt.verifyToken],
+    controller.deleteAllConversations
+  );
 };

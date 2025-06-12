@@ -12,6 +12,7 @@ import { AuthService } from '../../services/auth.service';
 import { Subscription } from 'rxjs';
 import { User } from '../../models/user.model';
 import { HttpClient } from '@angular/common/http';
+import { ConversationService } from '../../services/conversation.service';
 
 @Component({
   selector: 'app-settings',
@@ -45,7 +46,11 @@ export class SettingsComponent implements OnInit, OnDestroy {
 
   private googleAuthApiUrl = 'http://localhost:3000/api/google';
 
-  constructor(private http: HttpClient, private authService: AuthService) {}
+  constructor(
+    private http: HttpClient,
+    private authService: AuthService,
+    private conversationService: ConversationService
+  ) {}
 
   ngOnInit(): void {
     this.checkGoogleStatus();
@@ -190,6 +195,15 @@ export class SettingsComponent implements OnInit, OnDestroy {
       console.error('Error signing out:', error);
       // Fallback to regular signout
       this.onClose.emit();
+    }
+  }
+
+  deleteAllConversations() {
+    if (confirm('Delete all conversations? This action cannot be undone.')) {
+      this.conversationService.deleteAllConversations().subscribe({
+        next: () => alert('All conversations deleted.'),
+        error: (err) => alert('Failed to delete conversations.'),
+      });
     }
   }
 }

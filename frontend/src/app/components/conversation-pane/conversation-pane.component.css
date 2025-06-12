@@ -36,6 +36,12 @@
   width: 100%;
 }
 
+.typing-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .typing-indicator span {
   height: 8px;
   width: 8px;
@@ -62,4 +68,42 @@
   40% {
     transform: scale(1);
   }
+}
+
+/* Remove default margins from paragraphs in message bubbles */
+.message-group p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Ensure no extra spacing in message content */
+.message-group .bg-gray-100 p:last-child,
+.message-group .bg-black p:last-child {
+  margin-bottom: 0;
+}
+
+/* Remove whitespace below AI message bubbles */
+.message-group .bg-gray-100 {
+  margin-bottom: 0;
+}
+
+.message-group .bg-gray-100 > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Ensure tight spacing in message containers */
+.message-group .bg-gray-100 .space-y-4 > *:last-child,
+.message-group .bg-gray-100 .space-y-2 > *:last-child {
+  margin-bottom: 0;
+}
+
+/* Override any bottom margins on the last child elements */
+.message-group .bg-gray-100 > div:last-child,
+.message-group .bg-gray-100 > p:last-child {
+  margin-bottom: 0 !important;
+}
+
+/* Specifically target switch case containers */
+.message-group .bg-gray-100 > div[ng-switch] > div:last-child {
+  margin-bottom: 0 !important;
 }

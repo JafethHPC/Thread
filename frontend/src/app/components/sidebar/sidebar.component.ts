@@ -8,9 +8,16 @@ import {
   PipeTransform,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { AuthService } from '../../services/auth.service';
 import { User } from '../../models/user.model';
+import { ConversationService } from '../../services/conversation.service';
+import { Observable } from 'rxjs';
+import { Conversation } from '../../models/conversation';
+import { map, filter, switchMap, take } from 'rxjs/operators';
+import { of } from 'rxjs';
+import { ConfirmationModalComponent } from '../confirmation-modal/confirmation-modal.component';
 
 @Pipe({
   name: 'safeHtml',
@@ -26,7 +33,7 @@ export class SafeHtmlPipe implements PipeTransform {
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, SafeHtmlPipe],
+  imports: [CommonModule, SafeHtmlPipe, ConfirmationModalComponent],
   templateUrl: './sidebar.component.html',
   styleUrls: ['./sidebar.component.css'],
 })
@@ -36,6 +43,12 @@ export class SidebarComponent implements OnInit {
   @Output() toggleCollapse = new EventEmitter<void>();
 
   user: User | null = null;
+  conversations$: Observable<Conversation[]>;
+  currentConversationId$: Observable<string | null>;
+
+  // Modal state
+  showDeleteModal = false;
+  conversationToDelete: string | null = null;
 
   recentConversations = [
     {
@@ -60,13 +73,73 @@ export class SidebarComponent implements OnInit {
     },
   ];
 
-  constructor(private authService: AuthService) {}
+  constructor(
+    private authService: AuthService,
+    private conversationService: ConversationService,
+    private router: Router
+  ) {
+    this.conversations$ = this.authService.isInitialized$.pipe(
+      filter((isInitialized) => isInitialized),
+      switchMap(() => this.conversationService.conversations$)
+    );
+
+    this.currentConversationId$ =
+      this.conversationService.currentConversation$.pipe(
+        map((conversation) => conversation?.id?.toString() || null)
+      );
+  }
 
   ngOnInit(): void {
     // Subscribe to user data from auth service
     this.authService.user$.subscribe((user) => {
       this.user = user;
     });
+
+    // Load conversations when initialized
+    this.authService.isInitialized$
+      .pipe(
+        filter((isInitialized) => isInitialized),
+        switchMap(() => this.conversationService.getConversations())
+      )
+      .subscribe();
+  }
+
+  newConversation(): void {
+    // Navigate to dashboard root for new conversation
+    this.router.navigate(['/dashboard']);
+  }
+
+  selectConversation(id: string, event?: Event): void {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    // Navigate to specific conversation URL
+    this.router.navigate(['/dashboard/c', id]);
+  }
+
+  deleteConversation(id: string, event: MouseEvent): void {
+    event.stopPropagation(); // Prevent the conversation from being selected
+    this.conversationToDelete = id;
+    this.showDeleteModal = true;
+  }
+
+  confirmDelete(): void {
+    if (this.conversationToDelete) {
+      this.conversationService
+        .deleteConversation(this.conversationToDelete)
+        .subscribe();
+    }
+    this.closeDeleteModal();
+  }
+
+  cancelDelete(): void {
+    this.closeDeleteModal();
+  }
+
+  private closeDeleteModal(): void {
+    this.showDeleteModal = false;
+    this.conversationToDelete = null;
   }
 
   getUserAvatar(): string {

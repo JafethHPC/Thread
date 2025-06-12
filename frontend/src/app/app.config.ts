@@ -1,18 +1,32 @@
-import { ApplicationConfig } from '@angular/core';
-import { provideRouter } from '@angular/router';
 import {
-  provideHttpClient,
-  withInterceptorsFromDi,
-} from '@angular/common/http';
-import { HTTP_INTERCEPTORS } from '@angular/common/http';
+  ApplicationConfig,
+  APP_INITIALIZER,
+  provideZoneChangeDetection,
+} from '@angular/core';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 
 import { routes } from './app.routes';
-import { AuthInterceptor } from './services/auth.interceptor';
+import { authInterceptor } from './services/auth.interceptor';
+import { AuthService } from './services/auth.service';
+import { Observable } from 'rxjs';
+
+export function initializeAppFactory(
+  authService: AuthService
+): () => Observable<any> {
+  return () => authService.reauthenticate();
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes),
-    provideHttpClient(withInterceptorsFromDi()),
-    { provide: HTTP_INTERCEPTORS, useClass: AuthInterceptor, multi: true },
+    provideHttpClient(withInterceptors([authInterceptor])),
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeAppFactory,
+      deps: [AuthService],
+      multi: true,
+    },
   ],
 };

@@ -1,11 +1,14 @@
-module.exports = (app) => {
-  const ai = require("../controllers/ai.controller.js");
-  const { verifySession } = require("../middleware/authJwt");
+const controller = require("../controllers/ai.controller");
+const { authJwt } = require("../middleware");
 
-  var router = require("express").Router();
+module.exports = function (app) {
+  app.use(function (req, res, next) {
+    res.header(
+      "Access-Control-Allow-Headers",
+      "x-access-token, Origin, Content-Type, Accept"
+    );
+    next();
+  });
 
-  // Process a user's message
-  router.post("/chat", verifySession, ai.processMessage);
-
-  app.use("/api/ai", router);
+  app.post("/api/ai/chat", [authJwt.verifySession], controller.chat);
 };

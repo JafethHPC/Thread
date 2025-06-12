@@ -1,0 +1,12 @@
+<div class="event-card">
+  <div class="event-summary">{{ event.summary }}</div>
+  <div class="event-time">
+    <strong>Starts:</strong> {{ event.start | date : "short" }}
+  </div>
+  <div class="event-time">
+    <strong>Ends:</strong> {{ event.end | date : "short" }}
+  </div>
+  <div *ngIf="event.location" class="event-location">
+    <strong>Location:</strong> {{ event.location }}
+  </div>
+</div>

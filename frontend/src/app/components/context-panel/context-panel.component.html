@@ -28,114 +28,232 @@
 
   <!-- Main Content (flexible middle section) -->
   <div class="context-content space-y-6">
-    <!-- Connected Data -->
-    <div class="context-section">
-      <h3
-        class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 w-full"
-      >
-        Context
-      </h3>
-      <div class="space-y-2 text-sm w-full">
-        <div class="flex items-center space-x-3 text-gray-700 w-full">
-          <svg
-            class="w-5 h-5 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-            ></path>
-          </svg>
-          <span class="flex-1">12 related emails</span>
-        </div>
-        <div class="flex items-center space-x-3 text-gray-700 w-full">
-          <svg
-            class="w-5 h-5 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-            ></path>
-          </svg>
-          <span class="flex-1">3 upcoming meetings</span>
-        </div>
-        <div class="flex items-center space-x-3 text-gray-700 w-full">
-          <svg
-            class="w-5 h-5 flex-shrink-0"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
-            ></path>
-          </svg>
-          <span class="flex-1">4 related tasks</span>
-        </div>
-      </div>
-    </div>
-
-    <!-- People -->
-    <div class="context-section">
-      <h3
-        class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 w-full"
-      >
-        People
-      </h3>
-      <div class="space-y-3 text-sm w-full">
-        <div
-          *ngFor="let person of people"
-          class="flex items-center space-x-3 w-full"
+    <ng-container *ngIf="context$ | async as context; else noContext">
+      <!-- Query Information -->
+      <div class="context-section">
+        <h3
+          class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2"
         >
-          <img
-            class="w-7 h-7 rounded-full flex-shrink-0"
-            [src]="person.avatarUrl"
-            [alt]="person.name"
-          />
-          <span class="font-medium text-gray-800 flex-1 truncate">{{
-            person.name
-          }}</span>
+          Current Query
+        </h3>
+        <p class="text-sm text-gray-700 bg-gray-50 p-2 rounded">
+          {{ context.query }}
+        </p>
+        <div class="mt-2 flex flex-wrap gap-1">
+          <span
+            *ngFor="let keyword of context.keywords"
+            class="inline-block bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
+          >
+            {{ keyword }}
+          </span>
         </div>
       </div>
-    </div>
 
-    <!-- Timeline -->
-    <div class="context-section">
-      <h3
-        class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3 w-full"
-      >
-        Timeline
-      </h3>
-      <div class="space-y-4 text-sm w-full">
-        <div *ngFor="let event of timeline" class="flex space-x-3 w-full">
-          <div class="flex flex-col items-center flex-shrink-0">
-            <div
-              class="w-2.5 h-2.5 rounded-full"
-              [ngClass]="event.active ? 'bg-black' : 'bg-gray-300'"
-            ></div>
-            <div
-              class="w-px flex-1"
-              [ngClass]="event.active ? 'bg-black' : 'bg-gray-300'"
-            ></div>
+      <!-- Context Overview -->
+      <div class="context-section">
+        <h3
+          class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2"
+        >
+          Context
+        </h3>
+        <div class="space-y-2 text-sm">
+          <div class="flex items-center space-x-3 text-gray-700">
+            <svg
+              class="w-5 h-5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              ></path>
+            </svg>
+            <span class="flex-1"
+              >{{ context.emails.length }} related emails</span
+            >
           </div>
-          <div class="flex-1 min-w-0">
-            <p class="font-medium text-gray-800 truncate">{{ event.time }}</p>
-            <p class="text-gray-500 truncate">{{ event.description }}</p>
+          <div class="flex items-center space-x-3 text-gray-700">
+            <svg
+              class="w-5 h-5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              ></path>
+            </svg>
+            <span class="flex-1"
+              >{{ context.events.length }} calendar events</span
+            >
+          </div>
+          <div class="flex items-center space-x-3 text-gray-700">
+            <svg
+              class="w-5 h-5 flex-shrink-0"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"
+              ></path>
+            </svg>
+            <span class="flex-1">{{ context.tasks.length }} related tasks</span>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- Related Emails -->
+      <div class="context-section" *ngIf="context.emails.length > 0">
+        <h3
+          class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3"
+        >
+          Related Emails
+        </h3>
+        <div class="space-y-3">
+          <div
+            *ngFor="let email of context.emails"
+            class="bg-gray-50 p-3 rounded-lg text-sm"
+          >
+            <div class="font-medium text-gray-800 truncate">
+              {{ email.subject }}
+            </div>
+            <div class="text-gray-600 mt-1">From: {{ email.from }}</div>
+            <div class="text-gray-500 text-xs mt-1">
+              {{ formatDate(email.date) }}
+            </div>
+            <div class="text-gray-600 mt-2 text-xs line-clamp-2">
+              {{ email.snippet }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related Events -->
+      <div class="context-section" *ngIf="context.events.length > 0">
+        <h3
+          class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3"
+        >
+          Related Events
+        </h3>
+        <div class="space-y-3">
+          <div
+            *ngFor="let event of context.events"
+            class="bg-gray-50 p-3 rounded-lg text-sm"
+          >
+            <div class="font-medium text-gray-800">{{ event.summary }}</div>
+            <div class="text-gray-600 mt-1">{{ formatDate(event.start) }}</div>
+            <div class="text-gray-500 text-xs mt-1" *ngIf="event.location">
+              📍 {{ event.location }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Related Tasks -->
+      <div class="context-section" *ngIf="context.tasks.length > 0">
+        <h3
+          class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3"
+        >
+          Related Tasks
+        </h3>
+        <div class="space-y-3">
+          <div
+            *ngFor="let task of context.tasks"
+            class="bg-gray-50 p-3 rounded-lg text-sm"
+          >
+            <div class="font-medium text-gray-800">{{ task.title }}</div>
+            <div class="mt-1">
+              <span [class]="getTaskStatusColor(task.status)">
+                {{ formatTaskStatus(task.status) }}
+              </span>
+            </div>
+            <div class="text-gray-500 text-xs mt-1" *ngIf="task.due">
+              Due: {{ formatDate(task.due) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- People -->
+      <div class="context-section" *ngIf="context.people.length > 0">
+        <h3
+          class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-3"
+        >
+          People
+        </h3>
+        <div class="space-y-2 text-sm">
+          <div
+            *ngFor="let person of context.people"
+            class="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            <!-- Avatar with fallback to initials -->
+            <div class="relative w-8 h-8 flex-shrink-0">
+              <img
+                class="w-8 h-8 rounded-full object-cover"
+                [src]="person.avatarUrl"
+                [alt]="person.name"
+                (error)="onAvatarError($event, person)"
+                [style.display]="person.showInitials ? 'none' : 'block'"
+              />
+              <div
+                *ngIf="person.showInitials"
+                class="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                [style.background-color]="getPersonColor(person.name)"
+              >
+                {{ getPersonInitials(person.name) }}
+              </div>
+            </div>
+
+            <!-- Person info -->
+            <div class="flex-1 min-w-0">
+              <div class="font-medium text-gray-800 truncate">
+                {{ person.name }}
+              </div>
+              <div *ngIf="person.email" class="text-xs text-gray-500 truncate">
+                {{ person.email }}
+              </div>
+              <div class="text-xs text-gray-400 capitalize">
+                {{ person.source }}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #noContext>
+      <!-- Empty State -->
+      <div class="context-section text-center py-8">
+        <div class="text-gray-400 mb-2">
+          <svg
+            class="w-12 h-12 mx-auto"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-sm font-medium text-gray-500 mb-1">No context yet</h3>
+        <p class="text-xs text-gray-400">
+          Ask a question to see related information
+        </p>
+      </div>
+    </ng-template>
   </div>
 </div>

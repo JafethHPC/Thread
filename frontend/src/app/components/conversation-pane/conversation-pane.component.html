@@ -3,7 +3,9 @@
   <div
     class="header-section flex-shrink-0 flex items-center justify-between p-4 border-b border-gray-200"
   >
-    <h2 class="text-lg font-semibold">Meeting with Sarah</h2>
+    <h2 class="text-lg font-semibold">
+      {{ (currentConversation$ | async)?.title || "New Thread" }}
+    </h2>
     <div class="flex items-center space-x-3">
       <button
         class="p-1.5 text-gray-500 hover:text-black hover:bg-gray-100 rounded-md"
@@ -45,109 +47,261 @@
   </div>
 
   <!-- Chat Area (Flexible middle section) -->
-  <div class="chat-area flex-1 p-6 overflow-y-auto">
-    <!-- Login Prompt -->
-    <div
-      *ngIf="!(isAuthenticated$ | async)"
-      class="h-full w-full flex items-center justify-center"
-    >
-      <button
-        (click)="loginWithGoogle()"
-        class="bg-black text-white font-semibold py-3 px-6 rounded-lg hover:bg-gray-800"
-      >
-        Login with Google to get started
-      </button>
-    </div>
+  <div #chatContainer class="flex-1 overflow-y-auto p-6">
+    <div class="space-y-4">
+      <ng-container *ngIf="isAuthenticated$ | async; else notAuthenticated">
+        <div *ngFor="let message of messages$ | async" class="message-group">
+          <!-- User's Message (right-aligned) -->
+          <div *ngIf="message.role === 'user'" class="flex justify-end">
+            <div class="bg-black text-white p-3 rounded-lg max-w-lg">
+              <p>{{ formatMessageContent(message.content) }}</p>
+            </div>
+          </div>
 
-    <ng-container *ngIf="isAuthenticated$ | async">
-      <!-- A single message group containing user prompt and AI response -->
-      <div *ngFor="let message of messages" class="space-y-4">
-        <!-- User's Message (right-aligned) -->
-        <div class="flex justify-end">
-          <div class="bg-black text-white p-3 rounded-lg max-w-lg">
-            <p>{{ message.user }}</p>
+          <!-- AI's Response (left-aligned) -->
+          <div *ngIf="message.role === 'assistant'" class="flex justify-start">
+            <div class="bg-gray-100 text-black p-3 rounded-lg max-w-lg">
+              <!-- Show natural language response first if available -->
+              <div
+                *ngIf="message.content.naturalLanguage"
+                [class]="message.type ? 'mb-3' : ''"
+              >
+                <p>
+                  {{ formatMessageContent(message.content.naturalLanguage) }}
+                </p>
+              </div>
+
+              <!-- Then show structured data -->
+              <div [ngSwitch]="message.type">
+                <div *ngSwitchCase="'emails'" class="space-y-4">
+                  <app-email-card
+                    *ngFor="
+                      let email of getLimitedEmails(
+                        message.content,
+                        message.id || ''
+                      )
+                    "
+                    [email]="email"
+                  ></app-email-card>
+
+                  <!-- Expand button for additional emails -->
+                  <div
+                    *ngIf="hasMoreEmails(message.content, message.id || '')"
+                    class="text-center"
+                  >
+                    <button
+                      (click)="toggleEmailExpansion(message.id || '')"
+                      class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors duration-200"
+                    >
+                      <span *ngIf="!areEmailsExpanded(message.id || '')">
+                        Show
+                        {{
+                          getHiddenEmailCount(message.content, message.id || "")
+                        }}
+                        more emails
+                      </span>
+                      <span *ngIf="areEmailsExpanded(message.id || '')">
+                        Show fewer emails
+                      </span>
+                    </button>
+                  </div>
+                </div>
+                <div *ngSwitchCase="'tasks'" class="space-y-4">
+                  <app-task-list
+                    [tasks]="getLimitedTasks(message.content, message.id || '')"
+                  ></app-task-list>
+
+                  <!-- Expand button for additional tasks -->
+                  <div
+                    *ngIf="hasMoreTasks(message.content, message.id || '')"
+                    class="text-center"
+                  >
+                    <button
+                      (click)="toggleTaskExpansion(message.id || '')"
+                      class="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors duration-200"
+                    >
+                      <span *ngIf="!areTasksExpanded(message.id || '')">
+                        Show
+                        {{
+                          getHiddenTaskCount(message.content, message.id || "")
+                        }}
+                        more tasks
+                      </span>
+                      <span *ngIf="areTasksExpanded(message.id || '')">
+                        Show fewer tasks
+                      </span>
+                    </button>
+                  </div>
+                </div>
+                <div *ngSwitchCase="'calendar_events'" class="space-y-4">
+                  <app-calendar-event-card
+                    *ngFor="let event of getEmailsArray(message.content)"
+                    [event]="event"
+                  ></app-calendar-event-card>
+                </div>
+                <div *ngSwitchCase="'context_analysis'" class="space-y-4">
+                  <!-- Show the analysis text -->
+                  <div
+                    [class]="
+                      (message.content.emails &&
+                        message.content.emails.length > 0) ||
+                      (message.content.tasks &&
+                        message.content.tasks.length > 0)
+                        ? 'mb-4'
+                        : ''
+                    "
+                  >
+                    <p class="whitespace-pre-wrap">
+                      {{ message.content.analysis }}
+                    </p>
+                  </div>
+
+                  <!-- Show related emails if any -->
+                  <div
+                    *ngIf="
+                      message.content.emails &&
+                      message.content.emails.length > 0
+                    "
+                    class="space-y-2"
+                  >
+                    <h4 class="font-medium text-gray-700">Related Emails:</h4>
+                    <app-email-card
+                      *ngFor="let email of message.content.emails.slice(0, 3)"
+                      [email]="email"
+                    ></app-email-card>
+                  </div>
+
+                  <!-- Show related tasks if any -->
+                  <div
+                    *ngIf="
+                      message.content.tasks && message.content.tasks.length > 0
+                    "
+                    class="space-y-2"
+                  >
+                    <h4 class="font-medium text-gray-700">Related Tasks:</h4>
+                    <app-task-list
+                      [tasks]="message.content.tasks"
+                    ></app-task-list>
+                  </div>
+                </div>
+                <div *ngSwitchCase="'comprehensive_search'" class="space-y-4">
+                  <!-- Show the analysis text -->
+                  <div
+                    [class]="
+                      (message.content.calendarEvents &&
+                        message.content.calendarEvents.length > 0) ||
+                      (message.content.emails &&
+                        message.content.emails.length > 0)
+                        ? 'mb-4'
+                        : ''
+                    "
+                  >
+                    <p class="whitespace-pre-wrap">
+                      {{ message.content.analysis }}
+                    </p>
+                  </div>
+
+                  <!-- Show calendar events if any -->
+                  <div
+                    *ngIf="
+                      message.content.calendarEvents &&
+                      message.content.calendarEvents.length > 0
+                    "
+                    class="space-y-2"
+                  >
+                    <h4 class="font-medium text-gray-700">Calendar Events:</h4>
+                    <app-calendar-event-card
+                      *ngFor="let event of message.content.calendarEvents"
+                      [event]="event"
+                    ></app-calendar-event-card>
+                  </div>
+
+                  <!-- Show related emails if any -->
+                  <div
+                    *ngIf="
+                      message.content.emails &&
+                      message.content.emails.length > 0
+                    "
+                    class="space-y-2"
+                  >
+                    <h4 class="font-medium text-gray-700">Related Emails:</h4>
+                    <app-email-card
+                      *ngFor="let email of message.content.emails"
+                      [email]="email"
+                    ></app-email-card>
+                  </div>
+                </div>
+                <p *ngSwitchCase="'error'">
+                  {{ formatMessageContent(message.content) }}
+                </p>
+                <p *ngSwitchDefault>
+                  {{ formatMessageContent(message.content) }}
+                </p>
+              </div>
+            </div>
           </div>
         </div>
 
-        <!-- AI's Response (left-aligned) -->
-        <div *ngIf="message.ai || isLoading" class="flex justify-start">
+        <!-- Loading Indicator -->
+        <div *ngIf="isLoading" class="flex justify-start">
           <div class="bg-gray-100 text-black p-3 rounded-lg max-w-lg">
-            <!-- Show typing indicator or AI message -->
-            <p *ngIf="isLoading && !message.ai" class="typing-indicator">
-              <span></span><span></span><span></span>
-            </p>
-            <p *ngIf="message.ai">{{ message.ai }}</p>
+            <div class="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
           </div>
         </div>
-      </div>
+      </ng-container>
 
-      <!-- Typing Indicator for the very first message -->
-      <div
-        *ngIf="isLoading && messages.length === 0"
-        class="flex justify-start"
-      >
-        <div class="bg-gray-100 text-black p-3 rounded-lg max-w-lg">
-          <p class="typing-indicator">
-            <span></span><span></span><span></span>
+      <ng-template #notAuthenticated>
+        <div class="text-center">
+          <h2 class="text-2xl font-semibold mb-4">Welcome to Thread</h2>
+          <p class="mb-6">
+            Your personal AI assistant. Please log in to continue.
           </p>
+          <button
+            (click)="loginWithGoogle()"
+            class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded"
+          >
+            Login with Google
+          </button>
         </div>
-      </div>
-    </ng-container>
+      </ng-template>
+    </div>
   </div>
 
   <!-- Footer Input (pushed to bottom) -->
-  <div class="input-footer p-4 bg-white border-t border-gray-200">
-    <div class="input-container relative w-full">
+  <div class="border-t p-4 bg-white">
+    <div class="relative">
       <input
         type="text"
-        placeholder="Ask Thread anything..."
-        class="w-full bg-gray-100 border-none rounded-lg py-3 pl-12 pr-20 focus:ring-2 focus:ring-black"
+        class="w-full border rounded-full py-3 px-4"
+        placeholder="Type your message..."
         [(ngModel)]="newMessage"
         (keyup.enter)="sendMessage()"
-        [disabled]="isLoading || !(isAuthenticated$ | async)"
+        [disabled]="!(isAuthenticated$ | async) || isLoading"
       />
       <button
-        class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-black"
-        [disabled]="isLoading || !(isAuthenticated$ | async)"
-      >
-        <!-- Attachment icon -->
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-          ></path>
-        </svg>
-      </button>
-      <button
-        class="absolute right-4 top-1/2 -translate-y-1/2 bg-black text-white p-1.5 rounded-md hover:bg-gray-800 disabled:bg-gray-400"
+        class="absolute right-2 top-1/2 -translate-y-1/2 bg-black text-white rounded-full p-2"
         (click)="sendMessage()"
-        [disabled]="!newMessage || isLoading || !(isAuthenticated$ | async)"
+        [disabled]="!(isAuthenticated$ | async) || isLoading"
       >
-        <!-- Send icon -->
         <svg
-          class="w-5 h-5"
+          xmlns="http://www.w3.org/2000/svg"
+          class="h-6 w-6"
           fill="none"
-          stroke="currentColor"
           viewBox="0 0 24 24"
+          stroke="currentColor"
         >
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-          ></path>
+            d="M5 10l7-7m0 0l7 7m-7-7v18"
+          />
         </svg>
       </button>
     </div>
-    <p class="privacy-text text-center text-xs text-gray-400 mt-2">
-      Your data is private and secure
-    </p>
   </div>
 </div>

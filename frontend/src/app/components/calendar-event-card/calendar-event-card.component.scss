@@ -1,0 +1,30 @@
+:host {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.event-card {
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+}
+
+.event-summary {
+  font-weight: bold;
+  font-size: 1.1rem;
+  margin-bottom: 0.5rem;
+}
+
+.event-time,
+.event-location {
+  font-size: 0.9rem;
+  color: #666;
+  margin-bottom: 0.25rem;
+}

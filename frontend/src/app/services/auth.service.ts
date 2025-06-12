@@ -22,6 +22,23 @@ export class AuthService {
   ) {
     this.userSubject = new BehaviorSubject<User | null>(null);
     this.user$ = this.userSubject.asObservable();
+    this.loadUserFromStorage();
+  }
+
+  private loadUserFromStorage(): void {
+    try {
+      const userJson = localStorage.getItem('user');
+      if (userJson) {
+        const user: User = JSON.parse(userJson);
+        if (user && user.accessToken) {
+          // You might want to add a check here to see if the token is expired
+          this.userSubject.next(user);
+        }
+      }
+    } catch (e) {
+      console.error('Could not load user from storage', e);
+      localStorage.removeItem('user');
+    }
   }
 
   public get userValue(): User | null {
@@ -29,20 +46,13 @@ export class AuthService {
   }
 
   reauthenticate(): Observable<User | null> {
-    return this.http
-      .get<User>(`${this.apiUrl}/profile`, { withCredentials: true })
-      .pipe(
-        tap((user) => {
-          this.userSubject.next(user);
-          this.isInitialized$.next(true);
-        }),
-        catchError((error) => {
-          // 401 is expected when user is not authenticated
-          this.userSubject.next(null);
-          this.isInitialized$.next(true);
-          return of(null);
-        })
-      );
+    const userJson = localStorage.getItem('user');
+    if (userJson) {
+      const user: User = JSON.parse(userJson);
+      this.userSubject.next(user);
+    }
+    this.isInitialized$.next(true);
+    return of(this.userSubject.value);
   }
 
   signUp(name: string, email: string, password: string): Observable<any> {
@@ -63,6 +73,7 @@ export class AuthService {
       .pipe(
         tap(async (user) => {
           this.userSubject.next(user);
+          localStorage.setItem('user', JSON.stringify(user));
 
           if (user.accessToken) {
             localStorage.setItem('token', user.accessToken);
@@ -72,6 +83,8 @@ export class AuthService {
   }
 
   async signOut(): Promise<void> {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
     this.userSubject.next(null);
     this.router.navigate(['/']);
   }
